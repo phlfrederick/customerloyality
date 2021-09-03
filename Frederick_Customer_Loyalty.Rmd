@@ -1,0 +1,133 @@
+---
+title: "Customer Loyalty Example 11.9"
+author: "Phillip Frederick"
+date: "October 4, 2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+
+### A credit card company is focused on gaining customers and keeping them.The company typically assumes a loss after the customer has signed up for service their first year, However, following this initial year this typically is followed by profits for the company.Profit is modeled by a normal distribution in the customer's nth year of service with the mean actual profits supplied by historical averages of past data of said customer and a standard deviation of 10%.  There is a churn rate of 15% and a retention rate of 85%.These two values highlight the probability of a customer ending or continuing business with the company at the end of the year. The company wants to estimate NPV of the net profit from any customer who has just signed up for service at the beggining of year 1, at a discount rate of 15% assuming that cash flow occurs in the middle of the year.It also wants to see how sensitive this NPV is to the rentention rate.
+
+
+## What are the facts?
+### The facts are supplied by the discount rate provided as well as a list of historical averages of past data related to customer records.
+### Reading the data into R in seperate dataframe: df1,Retention_rates and inputs
+```{r}
+suppressWarnings(library("XLConnect"))
+df<-loadWorkbook("C:/Users/philf/Desktop/R Data/Customer Loyalty.xlsx")
+d1<-readWorksheet(df,sheet="Model",startRow =10,endRow = 40)
+
+df1<-subset(d1,select=c("Year","Mean.Profit"))
+df1
+```
+
+```{r}
+Retention_rates<-readWorksheet(df,sheet='Model',startRow=3,startCol=4,endCol=4,endRow=8)
+inputs<-readWorksheet(df,sheet='Model',startRow=3,startCol=1,endCol=2,endRow=6)
+Retention_rates
+inputs
+```
+
+## What are the uncertanties 
+
+### Uncertainty exists in the form of whether or not a customer will stay or choose to leave the business and for how long they remain a loyal customer.There is also uncertainty in the actual profits generated which are normally distributed with mean based on the current historical average on record for a customer and the standard deviation is 10% of this same average.
+
+## Modeling Assumptions
+### Our model assumes that a customer leaves at the end of his/her nth year and it also assumes that the profit generated from this customer is random and independent as sampled from a normal distribution mentioned previously. Our model also assumes cash-flow occurs in the middle of the year. 
+
+## Simulate 30 years of potential profits over 10000 times
+### Net Present Value Function 
+```{r}
+net_present_val<-function(retention){
+  net_present_val<-c() #a vector of profits 
+  yrs_of_loyality<-c() # a vector of years loyal 
+  for(p in 1:1000){
+    actual_profit<-c() # a vector of actual profits
+    discount_profit<-c()
+    #a vector of whether or not the customer will stay or leave the business 
+    stay_or_go<-sample(x=c(1,0),
+                       prob=c(retention,1-retention),replace=T,size=length(df1$Year)) 
+    for(i in 1:length(stay_or_go)){
+      if(stay_or_go[i]==1){
+        actual_profit[i]<-rnorm(n=1,mean=df1$Mean.Profit[i],
+                                sd=0.10*abs(df1$Mean.Profit[i]))
+        }else{
+          break
+        }
+      }
+    for(j in 1:length(actual_profit)){
+      discount_profit[j]<-actual_profit[j]/(1+inputs$Col2[2])^(j-0.5)
+    }
+    #net present value is the summation of discounted profits
+    net_present_val[p]<-sum(discount_profit)
+    yrs_of_loyality[p]<-length(discount_profit)+1
+  }
+  return(list(net_present_val,yrs_of_loyality))
+}
+list_retention_0.75<-net_present_val(Retention_rates$Retention.rates.to.try[1])
+list_retention_0.80<-net_present_val(Retention_rates$Retention.rates.to.try[2])
+list_retention_0.85<-net_present_val(Retention_rates$Retention.rates.to.try[3])
+list_retention_0.90<-net_present_val(Retention_rates$Retention.rates.to.try[4])
+list_retention_0.95<-net_present_val(Retention_rates$Retention.rates.to.try[5])
+
+par(mfrow=c(2,2))
+hist(list_retention_0.75[[1]],xlab="Net Present Value ($)",
+     main="Distribution of NPV (Retention 0.75)");
+hist(list_retention_0.75[[2]],xlab="Loyalty Length (Yrs.)",
+     main="Distribution of Loyalty (Retention 0.75)");
+hist(list_retention_0.80[[1]],xlab="Net Present Value ($)",
+     main="Distribution of NPV (Retention 0.80)");
+hist(list_retention_0.80[[2]],xlab="Loyalty Length (Yrs.)",
+     main="Distribution of Loyalty (Retention 0.80)")
+
+```
+
+```{r}
+par(mfrow=c(2,1))
+hist(list_retention_0.85[[1]],xlab="Net Present Value ($)",
+     main="Distribution of NPV (Retention 0.85)");
+hist(list_retention_0.85[[2]],xlab="Loyalty Length (yrs.)",
+     main="Distribution of Loyalty (Retention 0.85)")
+```
+
+```{r}
+par(mfrow=c(2,2))
+hist(list_retention_0.90[[1]],xlab="Net Present Value ($)",
+     main="Distribution of NPV (Retention 0.90)");
+hist(list_retention_0.90[[2]],xlab="Loyalty Length (yrs.)",
+     main="Distribution of Loyalty (Retention 0.90)");
+hist(list_retention_0.95[[1]],xlab="Net Present Value ($)",
+     main="Distribution of NPV (Retention 0.95)");
+hist(list_retention_0.95[[2]],xlab="Loyalty Length (yrs.)",
+     main="Distribution of Loyalty (Retention 0.95)")
+```
+## Plot of the mean loyality years vs mean npv and the retion rate vs mean npv. 
+```{r}
+retention_rate<-seq(from=0.75,to=0.95,by=0.05)
+npv_means_list<-list(mean(list_retention_0.75[[1]]),mean(list_retention_0.80[[1]]),
+                 mean(list_retention_0.85[[1]]),mean(list_retention_0.90[[1]]),
+                 mean(list_retention_0.95[[1]]))
+
+avg_yrs_loyal<-list(mean(list_retention_0.75[[2]]),mean(list_retention_0.80[[2]]),
+                 mean(list_retention_0.85[[2]]),mean(list_retention_0.90[[2]]),
+                 mean(list_retention_0.95[[2]]))
+par(mfrow=c(1,2))
+plot(retention_rate,npv_means_list,type='o',col='blue',main="Mean NPV vs. Rention Rate",
+     xlab="Retention Rate",ylab="Mean NPV")
+plot(avg_yrs_loyal,npv_means_list,col='green',type='o',main="Mean NPV vs. Mean Years Loyal",
+     xlab="Avg.Years Loyal",ylab="Mean NPV"
+     )
+```
+
+## Sensitivity Analyses and Interpretation
+### The mean net present value increases as the retention rate increases and as the mean years of loyalty increases so does the mean net present value.Retention is a serious issue for credit card companies in terms of profitability. A close inspection of the analysis shows that mean net present value is impacted by a decrease of more than 50% as retention drops from 85% to 75%.It also shows a percentage increase of more than 100% in mean net present value from a retention rate increase from 85% to 95%. One interesting component that was not incorporated in this model is the assumption that the credit card company does not provide any special offers over the course of the simulated 30 year time span. Incentives to customers are likely to support retention and it would be interesting to see how this would effect NPV. 
