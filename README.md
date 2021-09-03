@@ -1,5 +1,5 @@
 # customerloyalty
-This repository contains files related to a summarized customer loyalty project associated with a course in my masters program titled "Decision Modeling: Probability & Statistics for Business Analytics".
+This repository contains files related to a summarized customer loyalty assignment associated with a course in my masters program titled "Decision Modeling: Probability & Statistics for Business Analytics".
 
 ## Summary
 A credit card company is focused on gaining customers and keeping them.The company typically
