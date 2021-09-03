@@ -1,1 +1,1 @@
-# customerloyality
+# customerloyalty
