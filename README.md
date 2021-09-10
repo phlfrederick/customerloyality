@@ -11,7 +11,7 @@ There is a churn rate of 15% and a retention rate of 85%.These two values highli
 of a customer ending or continuing business with the company at the end of the year.
 The company wants to estimate NPV of the net profit from any customer who has just signed
 up for service at the beggining of year 1, at a discount rate of 15% assuming that cash flow
-occurs in the middle of the year.It also wants to see how sensitive this NPV is to the rentention
+occurs in the middle of the year.It also wants to see how sensitive this NPV is to the retention
 rate.
 
 ## Files
